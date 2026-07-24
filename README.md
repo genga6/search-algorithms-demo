@@ -1,5 +1,10 @@
 # search-algorithms-demo
 
+**🔗 ライブデモ: https://genga6.github.io/search-algorithms-demo/**
+
+[![Deploy to GitHub Pages](https://github.com/genga6/search-algorithms-demo/actions/workflows/deploy.yml/badge.svg)](https://github.com/genga6/search-algorithms-demo/actions/workflows/deploy.yml)
+
+
 探索・最適化アルゴリズムを、共通の **trace（イベント列）基盤**の上で可視化しながら
 体系的に学ぶインタラクティブ・デモ集。設計思想と全体像は [`roadmap.md`](./roadmap.md) を参照。
 
