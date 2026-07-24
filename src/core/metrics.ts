@@ -9,6 +9,11 @@ export class StatsCounter {
   private generated = 0
   private frontierMax = 0
 
+  /** これまでに展開したノード数（予算チェック用に外から読む） */
+  get expandedCount(): number {
+    return this.expanded
+  }
+
   /** ノードを 1 つ展開した（pop） */
   expand(): void {
     this.expanded++

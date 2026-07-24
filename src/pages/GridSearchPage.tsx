@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { ALGORITHMS, ALGORITHMS_BY_ID } from "../algorithms/registry.js"
 import { collect } from "../core/collect.js"
 import { DEFAULT_PRESET_ID, GRID_PRESETS } from "../lib/presets.js"
@@ -9,8 +10,15 @@ import { StatsPanel } from "../viz/StatsPanel.js"
 import { useTracePlayer } from "../viz/useTracePlayer.js"
 
 export function GridSearchPage() {
+  // Home の A/B カードから ?algo=... で初期アルゴリズムを受け取る（無ければ astar）
+  const [searchParams] = useSearchParams()
+  const initialAlgo =
+    searchParams.get("algo") && ALGORITHMS_BY_ID[searchParams.get("algo") as string]
+      ? (searchParams.get("algo") as string)
+      : "astar"
+
   const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID)
-  const [algoId, setAlgoId] = useState("astar")
+  const [algoId, setAlgoId] = useState(initialAlgo)
 
   const preset = GRID_PRESETS.find((p) => p.id === presetId) ?? GRID_PRESETS[0]!
   const algo = ALGORITHMS_BY_ID[algoId]!
@@ -128,7 +136,7 @@ export function GridSearchPage() {
                     </button>
                   </td>
                   <td className="py-1.5 pr-4 text-right tabular-nums">
-                    {res.found ? res.cost : "—"}
+                    {res.truncated ? "打ち切り" : res.found ? res.cost : "—"}
                   </td>
                   <td className="py-1.5 pr-4 text-right tabular-nums">
                     {res.found ? res.actions.length : "—"}

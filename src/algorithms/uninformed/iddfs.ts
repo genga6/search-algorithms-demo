@@ -1,9 +1,10 @@
 import type { SearchEvent } from "../../core/events.js"
 import { StatsCounter } from "../../core/metrics.js"
 import type { SearchGen, SearchProblem } from "../../core/types.js"
-import { actionsFromPath, pathCost } from "../shared.js"
+import { DEEPENING_NODE_BUDGET, actionsFromPath, pathCost } from "../shared.js"
 
-type DlsResult = "found" | "cutoff" | "failure"
+// "budget" = 予算超過で打ち切り（開けた盤面での組合せ爆発を防ぐ安全弁）
+type DlsResult = "found" | "cutoff" | "failure" | "budget"
 
 /**
  * 反復深化深さ優先探索(IDDFS)。
@@ -30,6 +31,18 @@ export function* iddfs<S, A>(p: SearchProblem<S, A>, maxDepth = 200): SearchGen<
         stats: stats.snapshot(),
       }
     }
+    if (outcome === "budget") {
+      // 展開ノードが上限を超えた。開けた盤面では反復深化は非現実的なので諦める。
+      yield { type: "note", message: `打ち切り（展開 ${DEEPENING_NODE_BUDGET} ノード超過）` }
+      return {
+        found: false,
+        path: [],
+        actions: [],
+        cost: 0,
+        stats: stats.snapshot(),
+        truncated: true,
+      }
+    }
     if (outcome === "failure") break // これ以上深くしても解はない
   }
 
@@ -45,6 +58,9 @@ function* dls<S, A>(
   pathStack: S[],
   onPath: Set<string>,
 ): Generator<SearchEvent<S>, DlsResult, void> {
+  // 予算オーバーなら即中断（これ以上潜らない）
+  if (stats.expandedCount >= DEEPENING_NODE_BUDGET) return "budget"
+
   pathStack.push(node)
   onPath.add(p.key(node))
   stats.generate()
@@ -63,6 +79,7 @@ function* dls<S, A>(
     found = "cutoff"
   } else {
     let anyCutoff = false
+    let hitBudget = false
     for (const a of p.actions(node)) {
       const child = p.result(node, a)
       if (onPath.has(p.key(child))) continue // 経路上の循環を避ける
@@ -71,9 +88,13 @@ function* dls<S, A>(
         found = "found"
         break
       }
+      if (res === "budget") {
+        hitBudget = true // 予算超過。これ以上探索せず上へ伝播する
+        break
+      }
       if (res === "cutoff") anyCutoff = true
     }
-    if (found !== "found") found = anyCutoff ? "cutoff" : "failure"
+    if (found !== "found") found = hitBudget ? "budget" : anyCutoff ? "cutoff" : "failure"
   }
 
   // 解が見つかったときは pathStack を経路として残す。それ以外は戻す。

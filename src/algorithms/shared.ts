@@ -1,6 +1,14 @@
 import type { SearchProblem } from "../core/types.js"
 
 /**
+ * 反復深化系(IDDFS/IDA\*)の展開ノード数の上限（安全弁）。
+ * 開けたグリッドでは経路が指数的にあり、これらは組合せ爆発してブラウザを固める。
+ * この数を超えたら探索を打ち切り、truncated=true で返す。
+ * （BFS/UCS/A\* など訪問済み管理で有界な手法には不要なので付けない）
+ */
+export const DEEPENING_NODE_BUDGET = 80_000
+
+/**
  * 親マップから初期状態→ゴールの経路を復元する。
  * parent は「状態キー → 直前の状態」を持つ。
  */

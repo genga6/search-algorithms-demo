@@ -1,7 +1,7 @@
 import type { SearchEvent } from "../../core/events.js"
 import { StatsCounter } from "../../core/metrics.js"
 import type { SearchGen, SearchProblem } from "../../core/types.js"
-import { actionsFromPath, pathCost } from "../shared.js"
+import { DEEPENING_NODE_BUDGET, actionsFromPath, pathCost } from "../shared.js"
 
 const INF = Number.POSITIVE_INFINITY
 
@@ -32,6 +32,18 @@ export function* idastar<S, A>(p: SearchProblem<S, A>): SearchGen<S, A> {
         stats: stats.snapshot(),
       }
     }
+    if (result.aborted) {
+      // 展開ノードが上限を超えた（安全弁）。
+      yield { type: "note", message: `打ち切り（展開 ${DEEPENING_NODE_BUDGET} ノード超過）` }
+      return {
+        found: false,
+        path: [],
+        actions: [],
+        cost: 0,
+        stats: stats.snapshot(),
+        truncated: true,
+      }
+    }
     threshold = result.nextThreshold // 閾値を超えた最小 f まで一気に上げる
   }
 
@@ -41,6 +53,8 @@ export function* idastar<S, A>(p: SearchProblem<S, A>): SearchGen<S, A> {
 interface Bounded {
   found: boolean
   nextThreshold: number
+  /** 予算超過で打ち切ったか */
+  aborted?: boolean
 }
 
 /** f ≤ threshold の範囲で深さ優先。超えた枝の最小 f を nextThreshold に集める。 */
@@ -54,6 +68,10 @@ function* dfsBounded<S, A>(
   onPath: Set<string>,
   h: (s: S) => number,
 ): Generator<SearchEvent<S>, Bounded, void> {
+  // 予算オーバーなら即中断
+  if (stats.expandedCount >= DEEPENING_NODE_BUDGET)
+    return { found: false, nextThreshold: INF, aborted: true }
+
   const f = g + h(node)
   if (f > threshold) {
     yield { type: "prune", state: node, reason: `f=${f} > ${threshold}` }
@@ -80,6 +98,12 @@ function* dfsBounded<S, A>(
     const childG = g + p.stepCost(node, a, child)
     const res = yield* dfsBounded(p, stats, child, childG, threshold, pathStack, onPath, h)
     if (res.found) return { found: true, nextThreshold: threshold }
+    if (res.aborted) {
+      // 予算超過を上へ伝播（経路も戻す）
+      pathStack.pop()
+      onPath.delete(p.key(node))
+      return { found: false, nextThreshold: INF, aborted: true }
+    }
     if (res.nextThreshold < nextThreshold) nextThreshold = res.nextThreshold
   }
 

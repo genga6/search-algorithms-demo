@@ -109,6 +109,30 @@ describe("デモのプリセットは全て解ける", () => {
   }
 })
 
+describe("反復深化系の予算ガード（ハング防止）", () => {
+  // 開けた盤面では IDDFS は組合せ爆発する。予算で打ち切られ、ハングせず返ること。
+  const openGrid = parseGrid([
+    "S...........",
+    "............",
+    "............",
+    "............",
+    "...........G",
+  ])
+
+  it("iddfs: 開けた盤面では打ち切り（found=false, truncated=true）", () => {
+    const res = collect(ALGORITHMS_BY_ID.iddfs!.run(gridProblem(openGrid)))
+    expect(res.truncated).toBe(true)
+    expect(res.found).toBe(false)
+  })
+
+  it("iddfs: 迷路(walls)なら打ち切らず解ける", () => {
+    const walls = GRID_PRESETS.find((p) => p.id === "walls")!
+    const res = collect(ALGORITHMS_BY_ID.iddfs!.run(gridProblem(walls.make())))
+    expect(res.found).toBe(true)
+    expect(res.truncated).toBeFalsy()
+  })
+})
+
 describe("ランダムグリッドでの整合性（決定的シード）", () => {
   it("解けるrandom gridで最適系は全て同じコスト", () => {
     const rng = mulberry32(42)

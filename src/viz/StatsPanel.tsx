@@ -24,7 +24,10 @@ export function StatsPanel({ result }: { result: SearchResult<Cell, Move> }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Stat label="解の有無" value={result.found ? "発見" : "なし"} />
+        <Stat
+          label="解の有無"
+          value={result.truncated ? "打ち切り" : result.found ? "発見" : "なし"}
+        />
         <Stat label="経路コスト" value={result.found ? result.cost : "—"} />
         <Stat label="経路長(手数)" value={result.found ? result.actions.length : "—"} />
         <Stat label="展開ノード" value={stats.expanded} />

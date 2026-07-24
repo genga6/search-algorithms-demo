@@ -15,14 +15,14 @@ const FAMILIES: Family[] = [
     title: "情報なし探索",
     items: "BFS / DFS / IDDFS / UCS / 双方向",
     status: "ready",
-    to: "/grid",
+    to: "/grid?algo=bfs", // BFS を初期選択で開く
   },
   {
     id: "B",
     title: "情報あり探索",
     items: "貪欲 / A* / 重み付きA* / IDA* / ビーム",
     status: "ready",
-    to: "/grid",
+    to: "/grid?algo=astar", // A* を初期選択で開く
   },
   {
     id: "C",

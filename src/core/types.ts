@@ -48,6 +48,12 @@ export interface SearchOutcome<S, A> {
   cost: number
   /** 効率の計測値 */
   stats: SearchStats
+  /**
+   * 予算(展開ノード数の上限)に達して探索を打ち切ったか。
+   * 反復深化系(IDDFS/IDA\*)は開けたグリッドで組合せ爆発するため、ハング化を防ぐ安全弁。
+   * true のとき found=false は「解なし」ではなく「諦めた（打ち切り）」を意味する。
+   */
+  truncated?: boolean
 }
 
 /** collect() が組み立てる、trace 付きの完全な結果。 */
