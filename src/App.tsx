@@ -10,7 +10,7 @@ export function App() {
         <nav className="border-b border-slate-200 bg-white">
           <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
             <Link to="/" className="font-bold text-slate-800">
-              探索アルゴリズデモ
+              探索アルゴリズムデモ
             </Link>
             <Link to="/grid" className="text-sm text-slate-600 hover:text-amber-700">
               グリッド探索
